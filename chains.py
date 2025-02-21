@@ -1,32 +1,27 @@
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+import os
+from dotenv import load_dotenv
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
+from prompts import MEDICINE_EXTRACTION_PROMPT, MEDICINE_TRANSLATION_PROMPT
 
-medbridge_prompt = ChatPromptTemplate.from_messages(
-    [
-        (
-            "system",
-            "You are a medical prescriptor translator tool. Generat result after translating the prescription into normal human language",
-            "Always provide detailed result, including requests for length, prescription, salt,etc.",
+# Load environment variables
+load_dotenv()
 
-        ),
-        MessagesPlaceholder(variable_name="messages"),
-    ] 
+# Define prompts
+medicine_extraction_prompt = ChatPromptTemplate.from_messages([
+    ("system", MEDICINE_EXTRACTION_PROMPT),
+    ("user", "Extract the medicines from the following prescription: {prescription}")
+])
 
+medicine_translation_prompt = ChatPromptTemplate.from_messages([
+    ("system", MEDICINE_TRANSLATION_PROMPT),
+    ("user", "Provide the salt profile of the following medicines: {medicines}")
+])
+
+llm = ChatOpenAI(
+    openai_api_key=os.getenv("OPENAI_API_KEY")
 )
 
-generate_prompt = ChatPromptTemplate.from_messages(
-    [
-        (
-            "system",
-            "You are a helpful and accurate medical translator. Translate the doctor's message from doctor language to patient language. Maintain the medical context and terminology, but also ensure the patient can understand the message. If necessary, explain complex medical terms in simpler language for the patient.  If you are unsure of a term, ask for clarification."
-            "Generate the accuarte translation possible."
-            "If the user provide something that is not prescription, respond with a revised version of your previous attempts",
-        ),
-        MessagesPlaceholder(variable_name="messages"),
-    ]
-)
-
-
-llm = ChatOpenAI()
-generate_chain = generate_prompt | llm
-medbridge_chain = medbridge_prompt | llm
+# Create chains
+medicine_extraction_chain = medicine_extraction_prompt | llm
+medicine_translation_chain = medicine_translation_prompt | llm
