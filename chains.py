@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
-from prompts import MEDICINE_EXTRACTION_PROMPT, MEDICINE_TRANSLATION_PROMPT
+from prompts import MEDICINE_EXTRACTION_PROMPT, MEDICINE_TRANSLATION_PROMPT, TRANSLATION_PROMPT
 
 # Load environment variables
 load_dotenv()
@@ -18,10 +18,17 @@ medicine_translation_prompt = ChatPromptTemplate.from_messages([
     ("user", "Provide the salt profile of the following medicines: {medicines}")
 ])
 
+translation_prompt = ChatPromptTemplate.from_messages([
+    ("system", TRANSLATION_PROMPT),
+    ("user", "Translate the following medical document to simpler language: {text}")
+])
+
 llm = ChatOpenAI(
-    openai_api_key=os.getenv("OPENAI_API_KEY")
+    openai_api_key=os.getenv("OPENAI_API_KEY"),
+    model="gpt-3.5-turbo"
 )
 
 # Create chains
 medicine_extraction_chain = medicine_extraction_prompt | llm
 medicine_translation_chain = medicine_translation_prompt | llm
+translation_chain = translation_prompt | llm
