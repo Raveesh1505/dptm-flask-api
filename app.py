@@ -13,7 +13,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from langchain_core.messages import BaseMessage, HumanMessage
 from langgraph.graph import END, MessageGraph
-from chains import medicine_extraction_chain, medicine_translation_chain, translation_chain
+from chains import medicine_extraction_chain, medicine_translation_chain, translation_chain, dosage_chain
 
 app = Flask(__name__)
 CORS(app)
@@ -114,6 +114,24 @@ def translate_prescription_with_medicine():
         "original_text": extracted_text,
         "translated_prescription": response_prescription_translation.content,
         "translated_medicine": response_salt_analysis
+    }), 200
+
+@app.route("/extract-dosage", methods=["POST"])
+def extract_dosage():
+    data = request.json
+    if not data or "document_name" not in data:
+        return jsonify({"error": "Missing document_name field"}), 400
+    
+    extracted_text = perform_ocr(data["document_name"])
+    if not extracted_text:
+        return jsonify({"error": "Failed to extract text from the document"}), 500
+
+    inputs = HumanMessage(content=extracted_text)
+    response = dosage_chain.invoke(inputs)
+
+    return jsonify({
+        "original_text": extracted_text,
+        "dosage": response.content
     }), 200
 
 if __name__ == "__main__":
